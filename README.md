@@ -1,24 +1,23 @@
-# phi-topology-filter  Topologiczny filtr (idealny do zdjęć kosmosu)
-
+# phi-topology-filter  
 Topologiczny filtr **φ** oparty na geometrii **Λ–τ–ρ** do analizy obrazów kosmicznych (FITS/JPG/PNG).
 
-## Idea
+---
+
+## 🔥 Co to jest filtr φ?
 
 Zwykłe filtry pokazują **kontrast**.  
-Ten filtr próbuje pokazać **strukturę przestrzeni**:
+Filtr φ pokazuje **strukturę przestrzeni**:
 
 - **Λ** – stabilne struktury (kolumny, włókna, rdzenie),
-- **τ** – przejścia fazowe (halo, rezonanse, gradienty),
+- **τ** – przepływy i przejścia fazowe (gradienty, halo),
 - **ρ** – defekty (miejsca narodzin materii, załamania skrętu),
-- **φ** – punkt równowagi między Λ i τ (stan „porządkujący” przestrzeń).
+- **φ** – operator równowagi: φ = Λ + τ – ρ.
 
-Celem jest uzyskanie wizualizacji, która lepiej oddaje **stadium materii i przestrzeni**, a nie tylko jasność pikseli.
+Celem jest uzyskanie wizualizacji, która pokazuje **stadium materii i przestrzeni**, a nie tylko jasność pikseli.
 
-## Instalacja
+---
+
+## 📦 Instalacja
 
 ```bash
 pip install -r requirements.txt
-from phi_filter import phi_filter_image
-
-out_img = phi_filter_image("input.jpg", mode="lambda-tau-rho")
-out_img.save("output_phi.jpg")
