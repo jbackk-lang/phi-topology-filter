@@ -18,3 +18,7 @@ Celem jest uzyskanie wizualizacji, która lepiej oddaje **stadium materii i prze
 
 ```bash
 pip install -r requirements.txt
+from phi_filter import phi_filter_image
+
+out_img = phi_filter_image("input.jpg", mode="lambda-tau-rho")
+out_img.save("output_phi.jpg")
