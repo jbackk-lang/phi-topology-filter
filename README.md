@@ -16,6 +16,17 @@ Filtr φ pokazuje **strukturę przestrzeni**:
 Celem jest uzyskanie wizualizacji, która pokazuje **stadium materii i przestrzeni**, a nie tylko jasność pikseli.
 
 ---
+φ(x, y) = Λ(x, y) + τ(x, y) – ρ(x, y)
+
+Λ(x, y) = | ∇² I(x, y) |
+τ(x, y) = | ∇I(x, y) |
+ρ(x, y) = | curl( ∇I(x, y) ) |
+
+φ(x, y) = |I * K_laplace|
+         + |I * K_sobel_x| + |I * K_sobel_y|
+         – |I * K_curl|
+
+---
 
 ## 📦 Instalacja
 
