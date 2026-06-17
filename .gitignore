@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.DS_Store
+*.jpg
+*.png
+*.fits
+*.jpeg
+*.webp
+*.bmp
+*.tif
+*.tiff
