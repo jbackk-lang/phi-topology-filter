@@ -1,7 +1,3 @@
-**Content:**
-
-```txt
-numpy
 opencv-python
 Pillow
 astropy
