@@ -21,3 +21,10 @@ Celem jest uzyskanie wizualizacji, która pokazuje **stadium materii i przestrze
 
 ```bash
 pip install -r requirements.txt
+---
+📘 Licencja
+MIT — możesz używać, modyfikować i rozwijać filtr φ.
+
+✨ Autor
+Projekt: Jacek Kielich  
+Repo: https://github.com/jbackk-lang/phi-topology-filter (github.com in Bing)
