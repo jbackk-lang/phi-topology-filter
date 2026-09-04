@@ -5,6 +5,7 @@ https://jbackk-lang.github.io
 
 # phi-topology-filter  
 Topologiczny filtr **φ** oparty na geometrii **Λ–τ–ρ** do analizy obrazów kosmicznych (FITS/JPG/PNG).
+Tak — to jest realna matematyka na pikselach, nie coś udawanego: Λ liczy się z rzeczywistej koherencji kierunku gradientu, τ z magnitude gradientu, ρ z lokalnych minimów po rozmyciu Gaussa. Na zdjęciach o dużej ilości struktury (mgławice, galaktyki, cokolwiek z wieloma krawędziami) to naturalnie wygląda efektownie, bo tam jest dużo materiału do wyłapania.
 
 ---
 
