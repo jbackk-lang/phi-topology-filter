@@ -5,6 +5,7 @@ https://jbackk-lang.github.io
 
 # phi-topology-filter  
 Topologiczny filtr **φ** oparty na geometrii **Λ–τ–ρ** do analizy obrazów kosmicznych (FITS/JPG/PNG).
+
 Tak — to jest realna matematyka na pikselach, nie coś udawanego: Λ liczy się z rzeczywistej koherencji kierunku gradientu, τ z magnitude gradientu, ρ z lokalnych minimów po rozmyciu Gaussa. Na zdjęciach o dużej ilości struktury (mgławice, galaktyki, cokolwiek z wieloma krawędziami) to naturalnie wygląda efektownie, bo tam jest dużo materiału do wyłapania.
 
 ---
@@ -42,7 +43,21 @@ Ważne zastrzeżenie terminologiczne: w satelitarnych zdjęciach RADAROWYCH (SAR
 
 ρ (lokalne minima gradientu po rozmyciu) to coś w rodzaju uproszczonego residuum unsharp-mask / blob-detektora (dalekie od Difference-of-Gaussian używanego np. w SIFT) — nie jest to standardowy krok w pipeline'ach satelitarnych, bardziej improwizacja niż uznana technika.
 
-Podsumowując: to uproszczona, jednoplikowa wersja fragmentu tego, co realnie robi się w remote sensing (edge detection + przybliżenie coherence ze structure tensor), bez radiometrycznej kalibracji, band mathu (NDVI itp.), czy filtracji plamkowej (speckle) używanej dla SAR. Dobre jako lekkie narzędzie do wizualizacji struktury, nie zamiennik profesjonalnego pipeline'u.---
+Podsumowując: to uproszczona, jednoplikowa wersja fragmentu tego, co realnie robi się w remote sensing (edge detection + przybliżenie coherence ze structure tensor), bez radiometrycznej kalibracji, band mathu (NDVI itp.), czy filtracji plamkowej (speckle) używanej dla SAR. Dobre jako lekkie narzędzie do wizualizacji struktury, nie zamiennik profesjonalnego pipeline'u.
+
+---
+
+## 🗺️ Lineamenty geologiczne (structure tensor) — `geo_fault_lines.py`
+
+Właściwa, rygorystyczna wersja koherencji — nie uproszczona aproksymacja
+z `phi_core.py`, tylko prawdziwy **structure tensor** (macierz momentów
+drugiego rzędu gradientu, koherencja i kierunek z wartości własnych).
+To jest realna technika teledetekcyjna do wykrywania lineamentów:
+uskoków geologicznych, rzek, dróg. Uruchom `run_geo_fault_lines.bat`
+(bez argumentu = syntetyczny teren demonstracyjny z widocznym uskokiem;
+z argumentem = ścieżka do prawdziwego zdjęcia/DEM). Zapisuje mapę
+koherencji, mapę kierunku (kolor=kierunek, jasność=siła krawędzi) i
+oryginał z zaznaczonymi kandydatami na lineamenty.
 
 ## 🐛 Poprawki i nowości (2026-09-05)
 
