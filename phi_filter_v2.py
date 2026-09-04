@@ -2,6 +2,8 @@ import numpy as np
 from PIL import Image
 import cv2
 
+from phi_core import gradient_field, coherence_lambda, flow_tau, defects_rho, normalize, phi_composite
+
 
 def _load_rgb(path):
     img = Image.open(path).convert("RGB")
@@ -13,50 +15,48 @@ def _save_rgb(arr):
     return Image.fromarray(arr)
 
 
-def _gradient(img):
-    gray = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY)
-    gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
-    gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
-    mag = np.sqrt(gx**2 + gy**2) + 1e-6
-    nx = gx / mag
-    ny = gy / mag
-    return mag, nx, ny
-
-
-def _coherence(nx, ny, size=7):
-    kernel = np.ones((size, size), np.float32) / (size * size)
-    cx = cv2.filter2D(nx, -1, kernel)
-    cy = cv2.filter2D(ny, -1, kernel)
-    return np.sqrt(cx**2 + cy**2)
-
-
-def _rho_defects(mag):
-    blur = cv2.GaussianBlur(mag, (9, 9), 0)
-    diff = mag - blur
-    rho = np.maximum(0, -diff)
-    rho = rho / (rho.max() + 1e-6)
-    return rho
-
-
-def phi_filter_v2(path, strength=1.0):
+def phi_filter_v2(path, mode="phi-mix", strength=1.0):
     """
-    Wersja 2 filtra φ:
-    - Λ: koherencja kierunku
-    - τ: gradient (przepływ)
-    - ρ: defekty (lokalne minima)
+    Wersja 2 filtra phi -- Lambda/Tau/Rho licza sie teraz przez wspolny
+    phi_core.py (patrz BUGFIX w phi_core.py: byly 3 rozjezdzajace sie
+    kopie tej logiki).
+
+    mode:
+        - "lambda" / "tau" / "rho" -- pojedyncza mapa (jak w phi_fits.py)
+        - "phi" / "phi-mix" (domyslnie) -- pelny kompozyt Lambda+Tau-Rho
+
+    BUGFIX (2026-09-05), dwie rzeczy:
+    - `mode` wczesniej NIE ISTNIAL w sygnaturze tej funkcji, mimo ze
+      phi_batch.py wolal ja z parametrem `mode` uzywanym do nazwy pliku
+      wyjsciowego -- wiec np. "zdjecie_lambda.jpg" zawieralo w
+      rzeczywistosci pelny kompozyt phi, nie mape Lambda. Teraz `mode`
+      dziala tak samo dla obrazow RGB jak juz dzialalo dla FITS.
+    - `strength` bylo w sygnaturze, ale nigdzie w ciele funkcji nie
+      bylo uzywane -- nie mialo zadnego efektu niezaleznie od wartosci.
+      Teraz dziala jako wykladnik na koncowym kompozycie phi (analogicznie
+      do tego, jak `strength` byl uzyty w phi_filter.py v1), TYLKO dla
+      trybu phi/phi-mix -- pojedyncze mapy lambda/tau/rho zostaja
+      surowymi diagnostykami, bez wzmocnienia.
     """
     img = _load_rgb(path)
-    mag, nx, ny = _gradient(img)
+    gray = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY)
+    mag, nx, ny = gradient_field(gray)
 
-    Lambda = _coherence(nx, ny)
-    Tau = mag / (mag.max() + 1e-6)
-    Rho = _rho_defects(mag)
+    Lambda = normalize(coherence_lambda(nx, ny))
+    Tau = flow_tau(mag)
+    Rho = defects_rho(mag)
 
-    # operator φ = Λ + τ – ρ
-    phi = Lambda + Tau - Rho
-    phi = phi / (phi.max() + 1e-6)
+    if mode == "lambda":
+        out_map = Lambda
+    elif mode == "tau":
+        out_map = Tau
+    elif mode == "rho":
+        out_map = Rho
+    else:  # "phi" / "phi-mix"
+        phi = phi_composite(Lambda, Tau, Rho)
+        out_map = np.clip(phi, 0, 1) ** max(strength, 1e-6)
 
-    phi3 = np.stack([phi]*3, axis=-1)
-    out = img * (0.4 + 0.6 * phi3)
+    out_map3 = np.stack([out_map] * 3, axis=-1)
+    out = img * (0.4 + 0.6 * out_map3)
 
     return _save_rgb(out)

@@ -2,13 +2,7 @@ import numpy as np
 from PIL import Image
 import cv2
 
-
-def _to_gray(img):
-    return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-
-def _normalize(x):
-    return (x - x.min()) / (x.max() - x.min() + 1e-6)
+from phi_core import gradient_field, coherence_lambda, flow_tau, defects_rho, normalize
 
 
 def phi_structure_map(img_path):
@@ -17,28 +11,22 @@ def phi_structure_map(img_path):
     - Λ: stabilne struktury (koherencja kierunku)
     - τ: przejścia fazowe (gradient)
     - ρ: defekty (lokalne minima/załamania)
+
+    BUGFIX (2026-09-05): Λ liczyła się tu wcześniej z SUROWEGO,
+    nieznormalizowanego gradientu (gx, gy) -- w praktyce to była
+    wygładzona SIŁA gradientu, nie koherencja KIERUNKU, mimo
+    identycznej nazwy/opisu co w phi_filter_v2.py i phi_fits.py, które
+    poprawnie normalizowały kierunek przed uśrednieniem. Teraz wszystkie
+    trzy pliki wołają tę samą, kanoniczną funkcję z phi_core.py -- patrz
+    tam pełny opis błędu.
     """
     img = np.asarray(Image.open(img_path).convert("RGB"), dtype=np.float32) / 255.0
-    gray = _to_gray((img * 255).astype(np.uint8))
+    gray = cv2.cvtColor((img * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY)
 
-    # gradienty
-    gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
-    gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
-    mag = np.sqrt(gx**2 + gy**2)
+    mag, nx, ny = gradient_field(gray)
 
-    # Λ — koherencja kierunku
-    kernel = np.ones((7, 7), np.float32) / 49.0
-    cx = cv2.filter2D(gx, -1, kernel)
-    cy = cv2.filter2D(gy, -1, kernel)
-    coherence = np.sqrt(cx**2 + cy**2)
-    Lambda = _normalize(coherence)
-
-    # τ — przejścia fazowe (gradient)
-    Tau = _normalize(mag)
-
-    # ρ — defekty (lokalne minima gradientu)
-    blur = cv2.GaussianBlur(mag, (9, 9), 0)
-    rho = mag - blur
-    Rho = _normalize(np.maximum(0, -rho))
+    Lambda = normalize(coherence_lambda(nx, ny))
+    Tau = flow_tau(mag)
+    Rho = defects_rho(mag)
 
     return Lambda, Tau, Rho

@@ -40,7 +40,12 @@ def process_directory(input_dir, output_dir="output", mode="phi", strength=1.0):
         # Obrazy RGB
         elif ext in SUPPORTED_IMG:
             print(f"[IMG]  {f.name}")
-            out = phi_filter_v2(str(f), strength=strength)
+            # BUGFIX (2026-09-05): `mode` byl tu wczesniej ignorowany --
+            # phi_filter_v2 nie mial parametru `mode`, wiec zawsze
+            # zwracal pelny kompozyt phi, mimo ze plik wyjsciowy
+            # nazywal sie np. "zdjecie_lambda.jpg". Teraz mode jest
+            # przekazywany dalej, tak jak juz dzialo dla FITS ponizej.
+            out = phi_filter_v2(str(f), mode=mode, strength=strength)
             out.save(output_dir / f"{f.stem}_{mode}.jpg")
 
         else:

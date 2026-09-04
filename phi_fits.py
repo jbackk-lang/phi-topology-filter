@@ -1,7 +1,8 @@
 import numpy as np
 from astropy.io import fits
 from PIL import Image
-import cv2
+
+from phi_core import gradient_field, coherence_lambda, flow_tau, defects_rho, normalize, phi_composite
 
 
 def _normalize(arr):
@@ -30,29 +31,6 @@ def fits_to_rgb(data):
     return np.stack([img, img, img], axis=-1)
 
 
-def _gradient(gray):
-    gx = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
-    gy = cv2.Sobel(gray, cv2.CV_32F, 0, 1, ksize=3)
-    mag = np.sqrt(gx**2 + gy**2) + 1e-6
-    nx = gx / mag
-    ny = gy / mag
-    return mag, nx, ny
-
-
-def _coherence(nx, ny, size=7):
-    kernel = np.ones((size, size), np.float32) / (size * size)
-    cx = cv2.filter2D(nx, -1, kernel)
-    cy = cv2.filter2D(ny, -1, kernel)
-    return np.sqrt(cx**2 + cy**2)
-
-
-def _rho_defects(mag):
-    blur = cv2.GaussianBlur(mag, (9, 9), 0)
-    diff = mag - blur
-    rho = np.maximum(0, -diff)
-    return _normalize(rho)
-
-
 def phi_fits(path, ext=0, mode="phi", strength=1.0):
     """
     Tryby:
@@ -61,15 +39,19 @@ def phi_fits(path, ext=0, mode="phi", strength=1.0):
         - "tau" – mapa τ (gradient)
         - "rho" – mapa defektów ρ
         - "phi-mix" – φ = Λ + τ – ρ
+
+    Λ/τ/ρ licza sie teraz przez wspolny phi_core.py (patrz BUGFIX w
+    phi_core.py -- byly 3 rozjezdzajace sie kopie tej logiki, ta byla
+    juz poprawna/kanoniczna, teraz jest tylko re-eksportowana).
     """
     data = load_fits(path, ext=ext)
     rgb = fits_to_rgb(data)
     gray = data
 
-    mag, nx, ny = _gradient(gray)
-    Lambda = _normalize(_coherence(nx, ny))
-    Tau = _normalize(mag)
-    Rho = _rho_defects(mag)
+    mag, nx, ny = gradient_field(gray)
+    Lambda = normalize(coherence_lambda(nx, ny))
+    Tau = flow_tau(mag)
+    Rho = defects_rho(mag)
 
     if mode == "lambda":
         out = Lambda
@@ -77,12 +59,9 @@ def phi_fits(path, ext=0, mode="phi", strength=1.0):
         out = Tau
     elif mode == "rho":
         out = Rho
-    elif mode == "phi-mix":
-        phi = Lambda + Tau - Rho
-        out = _normalize(phi)
-    else:  # "phi"
-        phi = Lambda + Tau - Rho
-        out = _normalize(phi)
+    else:  # "phi" / "phi-mix"
+        phi = phi_composite(Lambda, Tau, Rho)
+        out = np.clip(phi, 0, 1) ** max(strength, 1e-6)
 
     out_rgb = (out * 255).astype(np.uint8)
     return Image.fromarray(out_rgb)

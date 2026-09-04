@@ -33,6 +33,24 @@ Celem jest uzyskanie wizualizacji, która pokazuje **stadium materii i przestrze
 
 ---
 
+## 🐛 Poprawki i nowości (2026-09-05)
+
+- **`phi_batch.py` respektuje `mode` dla obrazów RGB** — wcześniej dla
+  JPG/PNG zawsze zwracał pełny kompozyt φ, niezależnie od żądanego
+  trybu, mimo że plik wynikowy nazywał się np. `zdjecie_lambda.jpg`.
+- **Jedna, wspólna definicja Λ/τ/ρ** w nowym `phi_core.py` — wcześniej
+  `phi_filter_v2.py`, `phi_fits.py` i `phi_map.py` miały trzy niezależne
+  kopie tej logiki, i zdążyły się rozjechać (`phi_map.py` liczyło Λ z
+  surowego, nieznormalizowanego gradientu — inna matematyka pod tą samą
+  nazwą). Pełny opis w nagłówku `phi_core.py`.
+- **`__init__.py` eksportuje właściwe funkcje filtra** (wcześniej tylko
+  niepowiązane `Proximalizer`/`Phi2Interface`).
+- **Testy sanity** — `test_phi.py`, 7 testów na syntetycznych obrazach
+  (repo wcześniej nie miało żadnych).
+- **`pipeline_diagram.svg`** — diagram architektury po refaktorze.
+- **`run.bat`** — instaluje zależności, uruchamia testy, przetwarza
+  wskazany folder. Podwójny klik albo `run.bat` z terminala.
+
 ## 📦 Instalacja
 
 ```bash
