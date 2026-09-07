@@ -42,21 +42,41 @@ _experiment_scale_resonance.py, _experiment_resonance_v2.py w tym repo):
 
 UCZCIWE OGRANICZENIE -- `scale_resonance()` (TIMDR-M, koincydencja w
 przestrzeni skali zamiast czasu -- pomysl uzytkownika, konsultowany i
-przetestowany): dziala jako filtr antyszumowy (zmierzono: % szumu tla
-przechodzacego prog spadl z 40.6% do 15.6% przy progu ">=3 z 8 zgodnych
-skal"), ALE kosztem czulosci na WASKIE struktury -- ten sam test pokazal
-spadek pokrycia cienkiej linii (2px) z 42.8% do 31.2%, podczas gdy gruba
-linia (14px) zostala nietknieta (93.8% w obu przypadkach). Proba naprawy
-(gestsze probkowanie malych sigma) NIE dala mierzalnej roznicy w tym
-tescie. Miekkie wazenie (Vfinal=Vmax*(0.5+0.5*RM) zamiast twardego progu)
-z definicji nie moze dac WYZSZEGO pokrycia niz Vmax (mnoznik <=1) --
-porownywanie obu przy tym samym progu bezwzglednym jest metodologicznie
-niesprawiedliwe (mierzy tylko efekt przeskalowania, nie realna wartosc
-rezonansu); uczciwa ocena wymaga dopasowanych punktow pracy (ROC), co
-NIE zostalo jeszcze zrobione. Dlatego `scale_resonance()` jest tu
-dostepna, ale oznaczona jako EKSPERYMENTALNA -- do dalszego strojenia
-na realnych danych (np. retina_vessel_orientation.py), nie do uzycia
-jako gotowy, domyslny filtr.
+przetestowany, W TRZECH KOLEJNYCH TURACH, az do wlasciwej metodologii):
+
+- Tura 1 (naiwna): "% szumu przechodzacego prog" spadalo z 40.6% do
+  15.6% przy progu ">=3 z 8 zgodnych skal" -- ale kosztem pokrycia
+  cienkiej linii (42.8%->31.2%). Wyglada jak realny kompromis.
+- Tura 2 (proba naprawy): miekkie wazenie
+  (Vfinal=Vmax*(0.5+0.5*RM) zamiast twardego progu ">=3 skale") i/lub
+  gestsze probkowanie malych sigma. Gestsze sigma: brak mierzalnej
+  roznicy. Miekkie wazenie: PRZY TYM SAMYM progu bezwzglednym co Vmax,
+  co jest metodologicznie NIESPRAWIEDLIWE -- Vfinal=Vmax*waga z
+  waga<=1 z definicji nie moze dac wyzszego pokrycia niz Vmax przy
+  jednym wspolnym progu, wiec ten test niczego nie dowodzil.
+- Tura 3 (test ROC, wlasciwy -- zaproponowany przez uzytkownika):
+  dopasuj prog OSOBNO dla Vmax i dla Vfinal tak, zeby OBA dawaly TEN
+  SAM poziom przepuszczonego szumu (dopasowany punkt pracy), DOPIERO
+  wtedy porownaj pokrycie struktur. WYNIK: przy kazdym z 6 testowanych
+  poziomow szumu (5%-40%) Vmax i Vfinal daja PRAKTYCZNIE IDENTYCZNE
+  pokrycie (cienka: roznice <=0.8pp, gruba: dokladnie 93.8% w obu, na
+  kazdym poziomie) -- ZERO realnej przewagi rezonansu jako wagi. Tura 1
+  mierzyla wylacznie artefakt przeskalowania, nie prawdziwy efekt.
+  Wyjasnienie: RM liczone jest z TEGO SAMEGO stosu odpowiedzi co Vmax,
+  wiec jest z nim silnie skorelowane -- wazenie skorelowana wielkoscia
+  nie zmienia istotnie kolejnosci rankingowej pikseli, stad identyczna
+  krzywa ROC. (Patrz _experiment_scale_resonance.py,
+  _experiment_resonance_v2.py, _experiment_roc_comparison.py w tym
+  repo -- wszystkie trzy tury zachowane jako dokumentacja procesu.)
+
+WNIOSEK: `scale_resonance()` NIE poprawia detekcji jako waga/filtr
+polaczony z Vmax (zweryfikowane wlasciwym testem ROC) -- ale (patrz
+`_experiment_hessian_on_retina.py`) daje uzyteczna, INNA informacje:
+na prawdziwym drzewie naczyniowym RM zaznacza KRAWEDZIE/KONTURY
+szerokich naczyn (nizszy rezonans w centrum, wyzszy na brzegu), wiec
+nadaje sie jako wskaznik krawedzi/szerokosci, NIE jako samodzielny ani
+polaczony detektor obecnosci struktury. Funkcja zostaje w module z tym
+jawnym zastrzezeniem -- do uzycia swiadomego, nie jako domyslny filtr.
 """
 
 import numpy as np
@@ -140,12 +160,19 @@ def scale_resonance(stack, threshold=0.10):
 
     Wymaga `stack` ze `multi_scale_vesselness(..., return_stack=True)`.
 
-    ZMIERZONY KOMPROMIS (patrz naglowek modulu): filtruje ~2.6x wiecej
-    szumu (40.6%->15.6% w tescie), ale kosztem pokrycia waskich struktur
-    (spadek 42.8%->31.2% na linii 2px w tym samym tescie). Uzywaj jako
-    DODATKOWA informacje (np. do sortowania/priorytetyzacji kandydatow),
-    nie jako twardy filtr odrzucajacy, dopoki nie skalibrowane na
-    realnych danych.
+    NIE UZYWAJ jako wagi/filtra polaczonego z vesselness (np.
+    Vmax*(0.5+0.5*RM)) w celu poprawy detekcji -- WLASCIWY test ROC
+    (dopasowany poziom szumu, nie ten sam prog bezwzgledny) pokazal
+    ZERO realnej roznicy wzgledem samego Vmax (patrz "UCZCIWE
+    OGRANICZENIE" w naglowku modulu, tura 3). Wczesniejszy pozorny
+    "kompromis" (40.6%->15.6% szumu) byl artefaktem niesprawiedliwego
+    porownania przy jednym progu, nie prawdziwym efektem.
+
+    UZYWAJ NATOMIAST jako niezaleznej informacji o KRAWEDZI/SZEROKOSCI
+    struktury (zweryfikowane na prawdziwym drzewie naczyniowym w
+    _experiment_hessian_on_retina.py) -- np. do szacowania grubosci
+    naczynia albo segmentacji konturu, nie do samej decyzji "czy to w
+    ogole jest naczynie".
 
     DODATKOWA OBSERWACJA (test na _experiment_hessian_on_retina.py,
     prawdziwe -- nie syntetyczna linia -- drzewo naczyniowe): RM daje
