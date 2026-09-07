@@ -146,6 +146,18 @@ def scale_resonance(stack, threshold=0.10):
     DODATKOWA informacje (np. do sortowania/priorytetyzacji kandydatow),
     nie jako twardy filtr odrzucajacy, dopoki nie skalibrowane na
     realnych danych.
+
+    DODATKOWA OBSERWACJA (test na _experiment_hessian_on_retina.py,
+    prawdziwe -- nie syntetyczna linia -- drzewo naczyniowe): RM daje
+    PUSTE KONTURY na grubych naczyniach, nie wypelnione linie -- srodek
+    szerokiego naczynia ma NIZSZY rezonans niz jego brzegi (lokalnie
+    "plaski"/mniej grzbietowy w centrum, bardziej grzbietowy przy
+    krawedzi, gdzie intensywnosc realnie opada). Wniosek: RM w obecnej
+    formie nadaje sie jako WSKAZNIK KRAWEDZI/SZEROKOSCI naczynia (np. do
+    szacowania grubosci, albo segmentacji konturu), NIE jako samodzielny
+    detektor "czy tu w ogole jest naczynie" -- do tego lepszy jest
+    surowy `vmax` z multi_scale_vesselness (ktory wypelnia cale
+    naczynie, nie tylko brzegi).
     """
     sigmas = list(stack.keys())
     votes = np.zeros_like(next(iter(stack.values())))
