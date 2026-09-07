@@ -4,7 +4,7 @@ https://jbackk-lang.github.io
 ---
 
 # phi-topology-filter  
-Topologiczny filtr **φ** oparty na geometrii **Λ–τ–ρ** do analizy obrazów kosmicznych (FITS/JPG/PNG).
+Topologiczny filtr **φ** oparty na geometrii **Λ–τ–ρ** do analizy obrazów kosmicznych (FITS/JPG/PNG) — a ta sama koherencja ze structure tensor napędza też analizę **lineamentów geologicznych, linii papilarnych, naczyń siatkówki i włókien tkanki** (patrz sekcja [🧬 Inne domeny](#-inne-domeny-ten-sam-structure-tensor-inny-preprocessing) poniżej).
 
 Tak — to jest realna matematyka na pikselach, nie coś udawanego: Λ liczy się z rzeczywistej koherencji kierunku gradientu, τ z magnitude gradientu, ρ z lokalnych minimów po rozmyciu Gaussa. Na zdjęciach o dużej ilości struktury (mgławice, galaktyki, cokolwiek z wieloma krawędziami) to naturalnie wygląda efektownie, bo tam jest dużo materiału do wyłapania.
 
@@ -60,24 +60,6 @@ z argumentem = ścieżka do prawdziwego zdjęcia/DEM). Zapisuje mapę
 koherencji, mapę kierunku (kolor=kierunek, jasność=siła krawędzi) i
 oryginał z zaznaczonymi kandydatami na lineamenty.
 
-## 🐛 Poprawki i nowości (2026-09-05)
-
-- **`phi_batch.py` respektuje `mode` dla obrazów RGB** — wcześniej dla
-  JPG/PNG zawsze zwracał pełny kompozyt φ, niezależnie od żądanego
-  trybu, mimo że plik wynikowy nazywał się np. `zdjecie_lambda.jpg`.
-- **Jedna, wspólna definicja Λ/τ/ρ** w nowym `phi_core.py` — wcześniej
-  `phi_filter_v2.py`, `phi_fits.py` i `phi_map.py` miały trzy niezależne
-  kopie tej logiki, i zdążyły się rozjechać (`phi_map.py` liczyło Λ z
-  surowego, nieznormalizowanego gradientu — inna matematyka pod tą samą
-  nazwą). Pełny opis w nagłówku `phi_core.py`.
-- **`__init__.py` eksportuje właściwe funkcje filtra** (wcześniej tylko
-  niepowiązane `Proximalizer`/`Phi2Interface`).
-- **Testy sanity** — `test_phi.py`, 7 testów na syntetycznych obrazach
-  (repo wcześniej nie miało żadnych).
-- **`pipeline_diagram.svg`** — diagram architektury po refaktorze.
-- **`run.bat`** — instaluje zależności, uruchamia testy, przetwarza
-  wskazany folder. Podwójny klik albo `run.bat` z terminala.
-
 ## 🧬 Inne domeny (ten sam structure tensor, inny preprocessing)
 
 Ta sama matematyka co w `geo_fault_lines.py` (`phi_core.py:structure_tensor_coherence()`),
@@ -100,6 +82,24 @@ Każdy skrypt uruchomiony bez argumentu generuje jawnie oznaczony
 SYNTETYCZNY obraz demonstracyjny (nie prawdziwe dane), przetwarza go i
 zapisuje mapę koherencji/orientacji/wynik — sprawdzone ręcznie, nie mają
 jeszcze dedykowanych testów w `test_phi.py`.
+
+## 🐛 Poprawki i nowości (2026-09-05)
+
+- **`phi_batch.py` respektuje `mode` dla obrazów RGB** — wcześniej dla
+  JPG/PNG zawsze zwracał pełny kompozyt φ, niezależnie od żądanego
+  trybu, mimo że plik wynikowy nazywał się np. `zdjecie_lambda.jpg`.
+- **Jedna, wspólna definicja Λ/τ/ρ** w nowym `phi_core.py` — wcześniej
+  `phi_filter_v2.py`, `phi_fits.py` i `phi_map.py` miały trzy niezależne
+  kopie tej logiki, i zdążyły się rozjechać (`phi_map.py` liczyło Λ z
+  surowego, nieznormalizowanego gradientu — inna matematyka pod tą samą
+  nazwą). Pełny opis w nagłówku `phi_core.py`.
+- **`__init__.py` eksportuje właściwe funkcje filtra** (wcześniej tylko
+  niepowiązane `Proximalizer`/`Phi2Interface`).
+- **Testy sanity** — `test_phi.py`, 7 testów na syntetycznych obrazach
+  (repo wcześniej nie miało żadnych).
+- **`pipeline_diagram.svg`** — diagram architektury po refaktorze.
+- **`run.bat`** — instaluje zależności, uruchamia testy, przetwarza
+  wskazany folder. Podwójny klik albo `run.bat` z terminala.
 
 ## 📦 Instalacja
 
