@@ -78,6 +78,29 @@ oryginał z zaznaczonymi kandydatami na lineamenty.
 - **`run.bat`** — instaluje zależności, uruchamia testy, przetwarza
   wskazany folder. Podwójny klik albo `run.bat` z terminala.
 
+## 🧬 Inne domeny (ten sam structure tensor, inny preprocessing)
+
+Ta sama matematyka co w `geo_fault_lines.py` (`phi_core.py:structure_tensor_coherence()`),
+zastosowana do trzech kolejnych domen — różni je tylko dobór `window_sigma`
+do skali struktury (patrz docstring każdego pliku) i drobny preprocessing,
+nie sama koherencja/orientacja:
+
+- **`fingerprint_ridge_orientation.py`** — mapa orientacji grzbietów linii
+  papilarnych; niska koherencja lokalnie = kandydat na osobliwość
+  (core/delta) albo minucję.
+- **`retina_vessel_orientation.py`** — mapa orientacji naczyń siatkówki
+  (z maską okrągłego pola widzenia jak w prawdziwym zdjęciu dna oka);
+  `vessel_score` jako przybliżenie "vesselness".
+- **`tissue_fiber_orientation.py`** — mapa orientacji włókien tkanki pod
+  mikroskopem (kolagen, włókna mięśniowe); liczy też
+  `mean_alignment_index` — dokładnie ta sama wielkość co "coherency" w
+  OrientationJ/CT-FIRE.
+
+Każdy skrypt uruchomiony bez argumentu generuje jawnie oznaczony
+SYNTETYCZNY obraz demonstracyjny (nie prawdziwe dane), przetwarza go i
+zapisuje mapę koherencji/orientacji/wynik — sprawdzone ręcznie, nie mają
+jeszcze dedykowanych testów w `test_phi.py`.
+
 ## 📦 Instalacja
 
 ```bash
