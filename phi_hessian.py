@@ -39,6 +39,17 @@ _experiment_scale_resonance.py, _experiment_resonance_v2.py w tym repo):
    odpowiedzi na obu naraz (np. sigma=1.5: cienka=0.116, gruba=0.092;
    sigma=8: gruba=0.586, cienka=0.080), multi-scale max dal cienka=0.184,
    gruba=0.589 -- lepiej niz jakakolwiek pojedyncza skala dla obu.
+4. WALIDACJA NA REALNYM CELU (_experiment_roc_retina.py): test ROC
+   (recall na prawdziwej masce naczyn, przy dopasowanym FPR) na
+   syntetycznym drzewie naczyniowym ze ZMIENNA szerokoscia (nie sztuczne
+   dwie linie) -- multi_scale_vesselness druzgocaco wygrywa z istniejaca
+   koherencja z phi_core (analyze_retina, window_sigma=3.5 stale):
+   przy FPR=1%: Vmax=95.6% recall vs koherencja=32.7%; przy FPR=2%:
+   97.3% vs 59.3%; koherencja W OGOLE nie dochodzi do 100% recall nawet
+   przy FPR=20% (plaskowyz na 86.7%) -- pojedyncza stala skala fizycznie
+   nie widzi czesci drzewa o innej szerokosci, niezaleznie od progu.
+   To jest najmocniejszy, bo na najbardziej realistycznym celu,
+   argument za multi-scale Hesjanem w tym repo.
 
 UCZCIWE OGRANICZENIE -- `scale_resonance()` (TIMDR-M, koincydencja w
 przestrzeni skali zamiast czasu -- pomysl uzytkownika, konsultowany i
@@ -60,14 +71,24 @@ przetestowany, W TRZECH KOLEJNYCH TURACH, az do wlasciwej metodologii):
   wtedy porownaj pokrycie struktur. WYNIK: przy kazdym z 6 testowanych
   poziomow szumu (5%-40%) Vmax i Vfinal daja PRAKTYCZNIE IDENTYCZNE
   pokrycie (cienka: roznice <=0.8pp, gruba: dokladnie 93.8% w obu, na
-  kazdym poziomie) -- ZERO realnej przewagi rezonansu jako wagi. Tura 1
-  mierzyla wylacznie artefakt przeskalowania, nie prawdziwy efekt.
-  Wyjasnienie: RM liczone jest z TEGO SAMEGO stosu odpowiedzi co Vmax,
-  wiec jest z nim silnie skorelowane -- wazenie skorelowana wielkoscia
-  nie zmienia istotnie kolejnosci rankingowej pikseli, stad identyczna
-  krzywa ROC. (Patrz _experiment_scale_resonance.py,
-  _experiment_resonance_v2.py, _experiment_roc_comparison.py w tym
-  repo -- wszystkie trzy tury zachowane jako dokumentacja procesu.)
+  kazdym poziomie) -- ZERO realnej przewagi rezonansu jako wagi na
+  SZTUCZNYM celu (dwie proste rownolegle linie). Tura 1 mierzyla
+  wylacznie artefakt przeskalowania, nie prawdziwy efekt. Wyjasnienie:
+  RM liczone jest z TEGO SAMEGO stosu odpowiedzi co Vmax, wiec jest z
+  nim silnie skorelowane -- wazenie skorelowana wielkoscia nie zmienia
+  istotnie kolejnosci rankingowej pikseli, stad identyczna krzywa ROC.
+- Tura 4 (ten sam test ROC, ale na REALNYM celu -- syntetyczne drzewo
+  naczyniowe ze zmienna szerokoscia, `_experiment_roc_retina.py`,
+  ground-truth maska z generatora): tu Vfinal daje MALY, ale
+  KONSEKWENTNY plusik nad samym Vmax (recall przy FPR=1%: 96.3% vs
+  95.6%; FPR=2%: 97.6% vs 97.3%). Prawdopodobnie na bardziej zlozonej
+  strukturze (rozgalezienia, zmienna orientacja, nie tylko prosta
+  linia) korelacja RM-Vmax jest niedoskonala, wiec rezonans dokada
+  odrobine realnej informacji -- ale efekt jest maly (<1pp), nie
+  przesadzac z jego znaczeniem.
+  (Patrz _experiment_scale_resonance.py, _experiment_resonance_v2.py,
+  _experiment_roc_comparison.py, _experiment_roc_retina.py w tym repo
+  -- wszystkie cztery tury zachowane jako dokumentacja procesu.)
 
 WNIOSEK: `scale_resonance()` NIE poprawia detekcji jako waga/filtr
 polaczony z Vmax (zweryfikowane wlasciwym testem ROC) -- ale (patrz

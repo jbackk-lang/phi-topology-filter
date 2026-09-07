@@ -106,10 +106,16 @@ def _branch(img, x, y, angle, length, thickness, depth, rng, segments=5):
                         depth - 1, rng, segments=segments)
 
 
-def _synthetic_retina(size=400, seed=0, n_main_branches=6):
+def _synthetic_retina(size=400, seed=0, n_main_branches=6, return_mask=False):
     """Syntetyczne 'drzewo' naczyniowe od centralnego 'tarczy nerwu
     wzrokowego' (optic disc) w okragłym FOV -- jawnie SYNTETYCZNE, nie
-    prawdziwe zdjecie dna oka."""
+    prawdziwe zdjecie dna oka.
+
+    return_mask=True: dodatkowo zwraca PRAWDZIWA maske naczyn (kanwa
+    PRZED rozmyciem/polaczeniem z tlem/dorysowaniem tarczy -- czysty
+    ground truth "tu jest narysowane naczynie, tu nie") -- do uzycia w
+    testach ROC/precision-recall, gdzie potrzebna jest znana prawda, nie
+    tylko przyblizenie pasmem wokol linii."""
     rng = np.random.default_rng(seed)
     canvas = np.zeros((size, size), dtype=np.uint8)
     disc_x, disc_y = size * 0.42, size * 0.5
@@ -121,13 +127,19 @@ def _synthetic_retina(size=400, seed=0, n_main_branches=6):
                 thickness=rng.uniform(3.5, 5.5),
                 depth=4, rng=rng)
 
+    vessel_mask = canvas > 0
+
     canvas = cv2.GaussianBlur(canvas, (3, 3), 0)
     background = np.full((size, size), 60, dtype=np.uint8)
     fundus = np.maximum(background, canvas)
 
     fov = _fov_mask((size, size))
     fundus[~fov] = 0
+    vessel_mask = vessel_mask & fov
     cv2.circle(fundus, (int(disc_x), int(disc_y)), 10, 200, -1)
+
+    if return_mask:
+        return fundus, vessel_mask
     return fundus
 
 
