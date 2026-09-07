@@ -107,7 +107,7 @@ jeszcze dedykowanych testów w `test_phi.py`.
 pip install -r requirements.txt
 ---
 📘 Licencja
-MIT — możesz używać, modyfikować i rozwijać filtr φ.
+Proprietary — zastrzeżone, patrz plik LICENSE. Kontakt: jbackk@gmail.com
 
 ✨ Autor
 Projekt: Jacek Kielich  
