@@ -34,14 +34,24 @@ repo, zostawione jako dokumentacja procesu):
    w tym samym miejscu ~0.35-0.46 (wzrost 2.9x-5.2x) -- to jest glowny,
    wiarygodny sygnal detekcyjny.
 
-Naprawka zastosowana ponizej: `build_connection_trace()` LACZY
-zdarzenia sasiadujace W CZASIE odcinkiem linii (jesli odstep czasu
-<= max_gap), zamiast rysowac izolowane kropki -- odtwarza to ciagly
-slad, tak jak w zwalidowanym tescie (pkt 1 powyzej). Normalny ruch
-(losowe, niepowiazane porty) polaczony w ten sam sposob NIE tworzy
-spojnego kierunku (kolejne odcinki wskazuja w przypadkowych
-kierunkach, usredniaja sie do niskiej koherencji) -- tylko prawdziwy
-skan (port rosnacy/malejacy w miare uplywu czasu) daje wysoka, stabilna
+Naprawka v1 (bledna, wykryta na testach z prawdziwym zmieszanym
+ruchem): `build_connection_trace()` laczylo zdarzenia sasiadujace
+WYLACZNIE w czasie. Przy gestym, zmieszanym ruchu (normalny + skan
+razem) bardzo czesto dwa zupelnie NIEPOWIAZANE zdarzenia maja niemal
+identyczny czas (przypadkiem) -- laczenie ich linia tworzylo SZTUCZNY,
+niemal pionowy odcinek (roznica portu losowa, roznica czasu ~0).
+Zweryfikowano: to zdominowalo wynik na pierwszym pelnym tescie (wolny
+skan po przekatnej zmierzony jako ~90 stopni zamiast oczekiwanych ~45).
+
+Naprawka v2 (aktualna): `build_connection_trace()` laczy zdarzenia
+linia TYLKO jesli SPELNIONE SA RAZEM dwa warunki -- bliskosc w czasie
+(`max_gap`) ORAZ bliskosc w porcie (`max_port_step`). Prawdziwy skan ma
+male, w miare stale kroki portu miedzy kolejnymi probami tego samego
+zrodla; przypadkowa para niepowiazanych zdarzen ma losowa (zwykle DUZA)
+roznice portu, wiec drugi warunek odfiltrowuje wiekszosc spurious
+polaczen. Normalny ruch (losowe, niepowiazane porty) polaczony w ten
+sposob NIE tworzy spojnego kierunku -- tylko prawdziwy skan (port
+rosnacy/malejacy w miare uplywu czasu, male kroki) daje wysoka, stabilna
 koherencje wzdluz spojnego kierunku.
 
 UCZCIWE OGRANICZENIE: to narzedzie zaklada, ze wejsciowe zdarzenia juz
@@ -58,18 +68,33 @@ import cv2
 from phi_core import structure_tensor_coherence, lineament_score, orientation_to_rgb
 
 
-def build_connection_trace(events, size=200, max_gap=None, thickness=1):
+def build_connection_trace(events, size=200, max_gap=None, max_port_step=None, thickness=1):
     """
     events: iterowalna kolekcja (timestamp, port) -- surowe wartosci,
     dowolna skala (nie musza byc w [0, size)).
 
     max_gap: maksymalny odstep czasu (w jednostkach WEJSCIOWYCH, nie w
-    pikselach) miedzy kolejnymi (posortowanymi czasowo) zdarzeniami, dla
-    ktorego sa one rysowane jako POLACZONY odcinek linii, a nie osobne
-    kropki -- patrz uzasadnienie w naglowku modulu. Domyslnie (None):
-    5% calego zakresu czasu wejscia; dostroic per realne zrodlo danych
-    (np. do typowego odstepu miedzy kolejnymi probami tego samego
-    hosta).
+    pikselach) miedzy kolejnymi (posortowanymi czasowo) zdarzeniami.
+    max_port_step: maksymalna roznica portu (w jednostkach WEJSCIOWYCH)
+    miedzy tymi samymi dwoma zdarzeniami. Oba warunki musza byc spelnione
+    RAZEM, zeby narysowac POLACZONY odcinek linii -- w przeciwnym razie
+    zdarzenie jest osobna kropka. Domyslnie (None): odpowiednio 5%
+    zakresu czasu i 5% zakresu portu.
+
+    POPRAWKA (2026-09-08, po pierwszym uruchomieniu na zmieszanym ruchu):
+    pierwsza wersja laczyla linia KAZDA pare zdarzen blisko siebie W
+    CZASIE, bez sprawdzania portu. Przy duzej gestosci zdarzen (ruch
+    normalny + skan zmieszane) bardzo czesto dwa zupelnie NIEPOWIAZANE,
+    losowe zdarzenia maja niemal identyczny czas (przypadkiem) -- laczenie
+    ich linia tworzylo SZTUCZNY, niemal pionowy odcinek (roznica portu
+    losowa, roznica czasu ~0), bo takich par jest DUZO przy gestym ruchu.
+    Zweryfikowano: to zdominowalo wynik (wolny skan po przekatnej mierzony
+    jako ~90 stopni zamiast oczekiwanych ~45). Naprawiono: drugi warunek
+    (`max_port_step`) -- prawdziwy skan ma male, w miare stale kroki
+    portu miedzy kolejnymi probami tego samego zrodla; przypadkowa para
+    niepowiazanych zdarzen ma losowa (zwykle DUZA) roznice portu, wiec ten
+    warunek odfiltrowuje wiekszosc spurious polaczen, zostawiajac gl.
+    prawdziwe, ciagle sekwencje tego samego zrodla.
 
     Zwraca obraz gestosci polaczen (size x size, os X=czas, os Y=port).
     """
@@ -88,20 +113,27 @@ def build_connection_trace(events, size=200, max_gap=None, thickness=1):
 
     if max_gap is None:
         max_gap = 0.05 * t_span
+    if max_port_step is None:
+        max_port_step = 0.05 * p_span
 
     def to_px(t, p):
         x = (t - t_min) / t_span * (size - 1)
         y = (p - p_min) / p_span * (size - 1)
         return int(round(x)), int(round(y))
 
-    prev_px, prev_t = None, None
+    prev_px, prev_t, prev_p = None, None, None
     for t, p in zip(ts, ports):
         px = to_px(t, p)
-        if prev_px is not None and (t - prev_t) <= max_gap:
+        connect = (
+            prev_px is not None
+            and (t - prev_t) <= max_gap
+            and abs(p - prev_p) <= max_port_step
+        )
+        if connect:
             cv2.line(img, prev_px, px, color=60.0, thickness=thickness, lineType=cv2.LINE_AA)
         else:
             cv2.circle(img, px, radius=max(1, thickness), color=60.0, thickness=-1)
-        prev_px, prev_t = px, t
+        prev_px, prev_t, prev_p = px, t, p
 
     return cv2.GaussianBlur(img, (0, 0), 1.2)
 
@@ -120,7 +152,7 @@ def _interpret_direction(deg):
 
 
 def analyze_network_traffic(image_or_events, size=200, grad_ksize=3, window_sigma=2.5,
-                             scan_threshold=0.30, max_gap=None):
+                             scan_threshold=0.30, max_gap=None, max_port_step=None):
     """
     Przyjmuje albo gotowy obraz gestosci (np. z build_connection_trace,
     albo wlasny), albo liste zdarzen (t, port) -- wtedy sam buduje
@@ -129,7 +161,8 @@ def analyze_network_traffic(image_or_events, size=200, grad_ksize=3, window_sigm
     if isinstance(image_or_events, np.ndarray):
         img = image_or_events.astype(np.float32)
     else:
-        img = build_connection_trace(image_or_events, size=size, max_gap=max_gap)
+        img = build_connection_trace(image_or_events, size=size, max_gap=max_gap,
+                                      max_port_step=max_port_step)
 
     coherence, orientation, mag = structure_tensor_coherence(
         img, grad_ksize=grad_ksize, window_sigma=window_sigma
